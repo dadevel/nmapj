@@ -1,14 +1,14 @@
 [tool.poetry]
 name = "rich-nmap"
-version = "0.0.2"
-description = "Nmap wrapper with pretty output"
+version = "0.0.3"
+description = "Nmap wrapper with rich output"
 authors = ["dadevel"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "rich_nmap"}]
+packages = [{include = "rmap"}]
 
 [tool.poetry.scripts]
-rich-nmap = "rich_nmap.main:main"
+rmap = "rmap.main:main"
 
 [tool.poetry.dependencies]
 python = "^3.11"
