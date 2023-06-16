@@ -23,7 +23,7 @@ pip install --user git+https://github.com/dadevel/rich-nmap.git@main
 Allow `nmap` to open raw sockets without `root` access.
 
 ~~~ bash
-sudo setcap CAP_NET_RAW+eip /usr/bin/nmap
+sudo setcap CAP_NET_RAW=ep /usr/bin/nmap
 ~~~
 
 # Usage
@@ -31,7 +31,7 @@ sudo setcap CAP_NET_RAW+eip /usr/bin/nmap
 Discover web servers and scan them with [nuclei](https://github.com/projectdiscovery/nuclei).
 
 ~~~ bash
-rich-nmap -f csv 192.168.1.0/24 -- --privileged -n -Pn -T4 -p 80,443,8000,8080,8443 -sS -sV --version-intensity 0 | \
+rnmap -f csv 192.168.1.0/24 -- -n -Pn -T4 -p 80,443,8000,8080,8443 -sS -sV --version-intensity 0 | \
   awk -F , '$5 == "http" || $5 == "https" { printf("%s://%s:%s\n", $5, $1, $3); }' | \
   nuclei -silent -automatic-scan
 ~~~
