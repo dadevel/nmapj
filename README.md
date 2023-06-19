@@ -31,7 +31,19 @@ sudo setcap CAP_NET_RAW=ep /usr/bin/nmap
 Discover web servers and scan them with [nuclei](https://github.com/projectdiscovery/nuclei).
 
 ~~~ bash
-rmap -f csv 192.168.1.0/24 -- -n -Pn -T4 -p 80,443,8000,8080,8443 -sS -sV --version-intensity 0 | \
+rmap -f csv 192.168.1.0/24 -- -T4 -p- -sS -sV | \
   awk -F , '$5 == "http" || $5 == "https" { printf("%s://%s:%s\n", $5, $1, $3); }' | \
   nuclei -silent -automatic-scan
+~~~
+
+# Tips
+
+Balance scanning of large networks over multiple `nmap` processes.
+The example runs 16 processes in parallel with 128 IPs per process.
+
+~~~ bash
+echo 192.168.0.0/16 | \
+  mapcidr -silent | \
+  parallel --progress --pipe --ungroup --jobs 16 -N 128 -- rmap --no-progress -f csv -- -n -Pn -T4 --top-ports 1000 -sS -sV --version-intensity 0 | \
+  tee ./result.csv
 ~~~

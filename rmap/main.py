@@ -1,4 +1,4 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, BooleanOptionalAction
 from threading import Lock, Thread
 from typing import TextIO, Iterable
 from xml.etree import ElementTree
@@ -98,6 +98,7 @@ def main() -> None:
     entrypoint = ArgumentParser()
     entrypoint.add_argument('-f', '--format', choices=('auto', *printer.CLASSES), default='auto', metavar='|'.join(printer.CLASSES))
     entrypoint.add_argument('-o', '--output', default=None)
+    entrypoint.add_argument('--progress', action=BooleanOptionalAction, default=True)
     entrypoint.add_argument('targets', nargs='*', default=['-'], metavar='IPADDRESS|CIDR|FQDN|FILE')
     opts = entrypoint.parse_args(python_args)
 
@@ -132,26 +133,27 @@ def main() -> None:
     output_thread = Thread(target=parse_output, args=(process.stdout, printer_instance, console))
     output_thread.start()
 
-    progress = Progress(
-        SpinnerColumn(),
-        TextColumn('[progress.description]{task.description}'),
-        BarColumn(),
-        MofNCompleteColumn(),
-        TimeElapsedColumn(),
-        console=console,
-        transient=True,
-    )
-    TaskProgressColumn(text_format='')
-    with progress:
-        with TARGET_COUNTER_LOCK:
-            taskid = progress.add_task('Scanning...', total=TARGET_COUNTER)
-        while process.poll() is None or (process.poll() == 0 and not progress.finished):
-            with COMPLETED_COUNTER_LOCK, TARGET_COUNTER_LOCK:
-                progress.update(taskid, completed=COMPLETED_COUNTER, total=TARGET_COUNTER)
-            time.sleep(1)
+    if opts.progress:
+        progress = Progress(
+            SpinnerColumn(),
+            TextColumn('[progress.description]{task.description}'),
+            BarColumn(),
+            MofNCompleteColumn(),
+            TimeElapsedColumn(),
+            console=console,
+            transient=True,
+        )
+        TaskProgressColumn(text_format='')
+        with progress:
+            with TARGET_COUNTER_LOCK:
+                taskid = progress.add_task('Scanning...', total=TARGET_COUNTER)
+            while process.poll() is None or (process.poll() == 0 and not progress.finished):
+                with COMPLETED_COUNTER_LOCK, TARGET_COUNTER_LOCK:
+                    progress.update(taskid, completed=COMPLETED_COUNTER, total=TARGET_COUNTER)
+                time.sleep(1)
 
-        input_thread.join()
-        output_thread.join()
+    input_thread.join()
+    output_thread.join()
 
     rc = process.wait()
     if rc != 0:
