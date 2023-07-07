@@ -36,11 +36,15 @@ class CsvPrinter(Printer):
     def __init__(self, console: Console) -> None:
         super().__init__(console)
         self.file = StringIO()
+        self._first_row = True
 
     def add(self, host: Host) -> None:
         self.file.seek(0)
         self.file.truncate()
         writer = csv.writer(self.file, quoting=csv.QUOTE_MINIMAL)
+        if self._first_row:
+            self._first_row = False
+            writer.writerow(host.get_header())
         writer.writerows(host.to_rows())
         self.file.seek(0)
         self.console.print(self.file.read().strip())

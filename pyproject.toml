@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "rich-nmap"
-version = "0.0.4"
+version = "0.0.5"
 description = "Nmap wrapper with rich output"
 authors = ["dadevel"]
 license = "MIT"
