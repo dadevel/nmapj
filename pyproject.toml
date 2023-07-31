@@ -13,7 +13,7 @@ rmap = "rmap.main:main"
 [tool.poetry.dependencies]
 python = "^3.11"
 pyyaml = "^6.0"
-rich = "^13.4.2"
+rich = "^13.5.1"
 
 [build-system]
 requires = ["poetry-core"]
