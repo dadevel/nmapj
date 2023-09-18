@@ -1,8 +1,6 @@
-# rich-nmap
+# nmapj
 
-![Demo](./assets/demo.gif)
-
-A wrapper around [nmap](https://nmap.org/) that supports additional output formats.
+A wrapper around [nmap](https://nmap.org/) that prints JSONL output.
 
 # Setup
 
@@ -11,19 +9,19 @@ Install the Python package.
 a) With [pipx](https://github.com/pypa/pipx).
 
 ~~~ bash
-pipx install git+https://github.com/dadevel/rich-nmap.git@main
+pipx install git+https://github.com/dadevel/nmapjson.git@main
 ~~~
 
 b) With [pip](https://github.com/pypa/pip).
 
 ~~~ bash
-pip install --user git+https://github.com/dadevel/rich-nmap.git@main
+pip install --user git+https://github.com/dadevel/nmapjson.git@main
 ~~~
 
-Allow `nmap` to open raw sockets without `root` access.
+Optional: Give unprivileged `nmap` processes access to raw sockets.
 
 ~~~ bash
-sudo setcap CAP_NET_RAW=ep /usr/bin/nmap
+sudo setcap CAP_NET_RAW=ep "$(which nmap)"
 ~~~
 
 # Usage
@@ -31,8 +29,9 @@ sudo setcap CAP_NET_RAW=ep /usr/bin/nmap
 Discover web servers and scan them with [nuclei](https://github.com/projectdiscovery/nuclei).
 
 ~~~ bash
-rmap -f csv 192.168.1.0/24 -- -T4 -p- -sS -sV | \
-  awk -F , '$5 == "http" || $5 == "https" { printf("%s://%s:%s\n", $5, $1, $3); }' | \
+nmapj -A 192.168.1.0/24 | \
+  tee ./nmap.json | \
+  jq -r 'select(.application=="http")|"\(.address):\(.port)"' | \
   nuclei -silent -automatic-scan
 ~~~
 
@@ -44,6 +43,6 @@ The example runs 16 processes in parallel with 128 IPs per process.
 ~~~ bash
 echo 192.168.0.0/16 | \
   mapcidr -silent | \
-  parallel --progress --pipe --ungroup --jobs 16 -N 128 -- rmap --no-progress -f csv -- -n -Pn -T4 --top-ports 1000 -sS -sV --version-intensity 0 | \
-  tee ./result.csv
+  parallel --progress --pipe --ungroup --jobs 16 -N 128 -- nmapj --privileged -iL - -n -Pn -T4 --top-ports 100 -sS -sV --version-intensity 0 | \
+  tee ./nmap.json
 ~~~
