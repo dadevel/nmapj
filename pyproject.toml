@@ -1,19 +1,17 @@
 [tool.poetry]
-name = "rich-nmap"
-version = "0.0.5"
-description = "Nmap wrapper with rich output"
+name = "nmapj"
+version = "0.0.6"
+description = "Nmap wrapper with JSON output"
 authors = ["dadevel"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "rmap"}]
+packages = [{include = "nmapjson"}]
 
 [tool.poetry.scripts]
-rmap = "rmap.main:main"
+nmapj = "nmapjson.main:main"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-pyyaml = "^6.0"
-rich = "^13.4.2"
 
 [build-system]
 requires = ["poetry-core"]

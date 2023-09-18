@@ -1,7 +1,7 @@
 from __future__ import annotations
-from typing import Any, ClassVar
 from xml.etree.ElementTree import Element
 import dataclasses
+import textwrap
 
 
 @dataclasses.dataclass
@@ -13,9 +13,7 @@ class Port:
     product: str
     version: str
     extra: str
-    infos: dict[str, str]
-
-    HEADER: ClassVar[dict[str, str|None]] = dict(transport=None, number='port', application=None, product=None, version=None, extra=None)
+    infos: dict[str, list[str]]
 
     @classmethod
     def from_xml(cls, element: Element) -> Port:
@@ -33,17 +31,15 @@ class Port:
             product=service.attrib.get('product') or '' if service else '',
             version=service.attrib.get('version') or '' if service else '',
             extra=service.attrib.get('extra') or '' if service else '',
-            infos={subelement.attrib['id']: subelement.attrib['output'] for subelement in element.iter('script')},
+            infos={
+                subelement.attrib['id']: [
+                    line
+                    for index, line in enumerate(textwrap.dedent(subelement.attrib['output']).splitlines())
+                    if index > 1 or line
+                ]
+                for subelement in element.iter('script')
+            },
         )
-
-    def to_dict(self) -> dict[str, Any]:
-        return self.__dict__
-
-    def get_header(self) -> list[str]:
-        return [self.HEADER[k] or k for k in self.__dataclass_fields__ if k in self.HEADER] + list(self.infos)
-
-    def to_row(self) -> list[str]:
-        return [str(v) for k, v in self.to_dict().items() if k in self.HEADER] + list(self.infos.values())
 
 
 @dataclasses.dataclass
@@ -54,8 +50,6 @@ class Host:
     osvendor: str
     osfamily: str
     ports: dict[int, Port]
-
-    HEADER: ClassVar[dict[str, str|None]] = dict(network=None, address=None, osvendor=None, osfamily=None)
 
     @classmethod
     def from_xml(cls, element: Element) -> Host:
@@ -78,22 +72,6 @@ class Host:
             osfamily=osfamily,
             ports=ports,
         )
-
-    def to_dict(self) -> dict[str, Any]:
-        return dict(self.__dict__, ports={n: p.to_dict() for n, p in self.ports.items()})
-
-    def get_header(self) -> list[str]:
-        if self.ports:
-            return [self.HEADER[k] or k for k in self.__dataclass_fields__ if k in self.HEADER] + next(iter(self.ports.values())).get_header()
-        else:
-            return []
-
-    def to_rows(self) -> list[list[str]]:
-        rows = []
-        for port in self.ports.values():
-            row = [str(v) for k, v in self.to_dict().items() if k in self.HEADER] + port.to_row()
-            rows.append(row)
-        return rows
 
 
 def _subelement(element: Element, name: str) -> Element:
